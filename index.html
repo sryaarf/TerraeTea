@@ -376,7 +376,7 @@
 
 <!-- HEADER -->
 <div class="header">
-  <div class="logo">STOK<span>POOR</span> <span style="font-size:0.63rem;margin-left:4px;color:var(--muted)">// SISTEM LAPORAN STOK PUBLIK</span></div>
+  <div class="logo">TERRAE <span>TEA</span> <span style="font-size:0.63rem;margin-left:4px;color:var(--muted)">// SISTEM LAPORAN STOK PUBLIK</span></div>
   <div class="header-right">
     <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.7rem;color:var(--muted)">
       <div class="conn-dot" id="connDot"></div>
@@ -391,15 +391,15 @@
 
 <!-- TABS -->
 <div class="tabs-bar">
-  <div class="tab active" data-tab="editor" onclick="switchTab('editor')">✏ Buat Laporan</div>
-  <div class="tab" data-tab="database" onclick="switchTab('database');loadReports()">📊 Database Publik</div>
+  <div class="tab active" data-tab="editor" onclick="switchTab('editor')">Buat Laporan</div>
+  <div class="tab" data-tab="database" onclick="switchTab('database');loadReports()">Database</div>
 </div>
 
 <!-- ═══════════════════════════════ EDITOR ═══════════════════════════════ -->
 <div id="panel-editor" class="tab-panel active">
   <div class="content">
     <div class="report-header">
-      <div class="field-group"><label>Nama Gudang / Lokasi</label><input type="text" id="gudang" placeholder="cth: Gudang Utama A"></div>
+      <div class="field-group"><label>Nama</label><input type="text" id="gudang" placeholder="cth: Gudang Utama A"></div>
       <div class="field-group"><label>Tanggal Laporan</label><input type="date" id="tanggal"></div>
       <div class="field-group"><label>Petugas Stok</label><input type="text" id="petugas" placeholder="Nama petugas"></div>
       <div class="field-group"><label>Shift</label>
@@ -407,7 +407,6 @@
           <option>Pagi (06:00-14:00)</option>
           <option>Siang (14:00-22:00)</option>
           <option>Malam (22:00-06:00)</option>
-          <option>Full Day</option>
         </select>
       </div>
       <div class="field-group"><label>Nomor Laporan</label><input type="text" id="noLaporan" placeholder="Auto-generate"></div>
@@ -427,7 +426,7 @@
         <thead><tr>
           <th class="td-no">#</th>
           <th style="min-width:160px">Nama Barang</th>
-          <th style="min-width:100px">Kode/SKU</th>
+          <th style="min-width:100px">Kode</th>
           <th style="min-width:75px">Satuan</th>
           <th style="min-width:75px">Stok Awal</th>
           <th style="min-width:75px">Masuk</th>
@@ -445,7 +444,7 @@
     <div class="actions">
       <button class="btn btn-ghost" onclick="addRow()">＋ Tambah Baris</button>
       <button class="btn btn-ghost" onclick="addRows5()">＋ 5 Baris</button>
-      <button class="btn btn-ghost" onclick="clearTable()">🗑 Kosongkan</button>
+      <button class="btn btn-ghost" onclick="clearTable()">Kosongkan</button>
     </div>
 
     <div class="notes-area">
@@ -456,10 +455,10 @@
     <div class="actions">
       <button class="btn btn-primary" id="btnSave" onclick="saveLaporan()">
         <span class="spinner" id="saveSpinner" style="display:none"></span>
-        💾 Simpan ke Database
+        Simpan ke Database
       </button>
-      <button class="btn btn-outline" onclick="previewLaporan()">🖼 Preview & Ekspor Gambar</button>
-      <button class="btn btn-warn" onclick="exportTableImg()">📷 Ekspor Tabel</button>
+      <button class="btn btn-outline" onclick="previewLaporan()">Preview & Ekspor Gambar</button>
+      <button class="btn btn-warn" onclick="exportTableImg()">Ekspor Tabel</button>
     </div>
   </div>
 </div>
@@ -481,7 +480,7 @@
       </div>
       <button class="btn btn-ghost" style="align-self:flex-end" onclick="loadReports()">
         <span class="spinner" id="loadSpinner" style="display:none"></span>
-        🔄 Refresh
+        Refresh
       </button>
     </div>
 
@@ -517,7 +516,7 @@
 <div class="modal-overlay" id="setupModal">
   <div class="modal" style="max-width:680px">
     <div class="modal-head">
-      <div class="modal-title">⚙ KONFIGURASI GOOGLE SHEETS API</div>
+      <div class="modal-title">KONFIGURASI GOOGLE SHEETS API</div>
       <button class="modal-close" onclick="closeModal('setupModal')">✕</button>
     </div>
     <div class="modal-body">
@@ -533,7 +532,7 @@
       <div class="setup-step">
         <div class="setup-step-num">Langkah 2 — Buat Google Apps Script</div>
         <p>Di spreadsheet, klik <strong>Extensions → Apps Script</strong>. Hapus semua kode yang ada, lalu paste kode berikut:</p>
-        <button class="copy-btn" onclick="copyCode()">📋 Salin Kode</button>
+        <button class="copy-btn" onclick="copyCode()">Salin Kode</button>
         <code id="gasCode">const SHEET_NAME = "Laporan";
 const SECRET = "GANTI_DENGAN_PASSWORD_RAHASIA";
 
@@ -634,8 +633,8 @@ function handleReq(e) {
       </div>
 
       <div style="display:flex;gap:9px;margin-top:18px;flex-wrap:wrap">
-        <button class="btn btn-primary" onclick="saveConfig()">✓ Simpan Konfigurasi</button>
-        <button class="btn btn-outline" onclick="testConnection()">🔌 Test Koneksi</button>
+        <button class="btn btn-primary" onclick="saveConfig()">Simpan Konfigurasi</button>
+        <button class="btn btn-outline" onclick="testConnection()">Test Koneksi</button>
         <button class="btn btn-ghost" onclick="closeModal('setupModal')">Tutup</button>
       </div>
     </div>
@@ -908,8 +907,8 @@ function renderReports(list) {
         <div class="report-item-meta">${r.Tanggal||'-'} &nbsp;|&nbsp; ${r.Shift||'-'} &nbsp;|&nbsp; Petugas: ${r.Petugas||'-'} &nbsp;|&nbsp; ${r.TotalItem||0} item &nbsp;|&nbsp; ${r.Timestamp||''}</div>
       </div>
       <div class="report-item-actions">
-        <button class="btn-sm btn-sm-view" onclick='viewReport(${JSON.stringify(JSON.stringify(r))})'>👁 Lihat</button>
-        <button class="btn-sm btn-sm-img" onclick='exportReportImg(${JSON.stringify(JSON.stringify(r))})'>🖼 Gambar</button>
+        <button class="btn-sm btn-sm-view" onclick='viewReport(${JSON.stringify(JSON.stringify(r))})'>Lihat</button>
+        <button class="btn-sm btn-sm-img" onclick='exportReportImg(${JSON.stringify(JSON.stringify(r))})'>Gambar</button>
         <button class="btn-sm btn-sm-del" onclick='deleteReport("${r.ID}")'>🗑</button>
       </div>
     </div>`;
@@ -928,10 +927,10 @@ async function deleteReport(id) {
       body: JSON.stringify({action:'delete', id, secret:pw})
     });
     const data = await res.json();
-    if(data.ok) { showToast('✓ Laporan dihapus'); loadReports(); }
-    else showToast(`✗ ${data.msg}`, 'err');
+    if(data.ok) { showToast('Laporan dihapus'); loadReports(); }
+    else showToast(`${data.msg}`, 'err');
   } catch(err) {
-    showToast('✗ Gagal menghapus', 'err');
+    showToast('Gagal menghapus', 'err');
   }
 }
 
@@ -976,7 +975,7 @@ function buildPrintHTML(r) {
     </tr>`).join('')}</tbody>
   </table>
   ${(r.Catatan||r.catatan)?`<div class="pv-notes"><strong>Catatan:</strong> ${r.Catatan||r.catatan}</div>`:''}
-  <div class="pv-footer">STOKPOOR — Laporan Stok Harian &nbsp;|&nbsp; Dicetak: ${new Date().toLocaleString('id-ID')}</div>`;
+  <div class="pv-footer">TERRAE TEA - Laporan Stok Harian &nbsp;|&nbsp; Dicetak: ${new Date().toLocaleString('id-ID')}</div>`;
 }
 
 function viewReport(rStr) {
@@ -1009,15 +1008,15 @@ function previewLaporan() {
 }
 
 async function downloadPreviewImg() {
-  showToast('🖼 Memproses gambar...');
+  showToast('Memproses gambar...');
   try {
     const canvas = await html2canvas(document.getElementById('print-view'), {backgroundColor:'#fff',scale:2,logging:false});
     const a = document.createElement('a');
     a.download = `laporan-stok-${Date.now()}.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
-    showToast('✓ Gambar berhasil diunduh');
-  } catch(e) { showToast('✗ Gagal ekspor', 'err'); }
+    showToast('Gambar berhasil diunduh');
+  } catch(e) { showToast('Gagal ekspor', 'err'); }
 }
 
 async function exportTableImg() {
@@ -1028,8 +1027,8 @@ async function exportTableImg() {
     a.download = `tabel-stok-${Date.now()}.png`;
     a.href = canvas.toDataURL('image/png');
     a.click();
-    showToast('✓ Gambar tabel diunduh');
-  } catch(e) { showToast('✗ Gagal ekspor', 'err'); }
+    showToast('Gambar tabel diunduh');
+  } catch(e) { showToast('Gagal ekspor', 'err'); }
 }
 
 // ═══════════════════════════════════════════════
