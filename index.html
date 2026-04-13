@@ -1,0 +1,1088 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TERRAE TEA — Laporan Stok Harian</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root {
+    --bg: #0e0f0f;
+    --surface: #161818;
+    --surface2: #1d2020;
+    --border: #2a2e2e;
+    --accent: #c8f04a;
+    --accent2: #4af0c8;
+    --danger: #f04a4a;
+    --warn: #f0b84a;
+    --text: #e8ede8;
+    --muted: #6b7370;
+    --mono: 'IBM Plex Mono', monospace;
+    --sans: 'IBM Plex Sans', sans-serif;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--sans); min-height:100vh; }
+
+  /* ── SETUP BANNER ── */
+  #setup-banner {
+    background: #1a1200;
+    border-bottom: 2px solid var(--warn);
+    padding: 12px 32px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--mono);
+    font-size: 0.78rem;
+    color: var(--warn);
+  }
+  #setup-banner span { flex:1; }
+  #setup-banner a {
+    color: var(--accent);
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  #setup-banner button {
+    background: var(--warn);
+    color: #0e0f0f;
+    border: none;
+    padding: 6px 14px;
+    border-radius: 3px;
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--accent);
+    padding: 14px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky; top: 0; z-index: 100;
+  }
+  .logo { font-family:var(--mono); font-weight:700; font-size:1.15rem; letter-spacing:0.12em; color:var(--accent); }
+  .logo span { color:var(--muted); font-weight:400; }
+  .header-right { display:flex; align-items:center; gap:16px; }
+  .header-meta { font-family:var(--mono); font-size:0.7rem; color:var(--muted); text-align:right; }
+  .header-meta strong { color:var(--accent2); display:block; }
+  .conn-dot {
+    width:8px; height:8px; border-radius:50%;
+    background: var(--muted);
+    transition: background 0.3s;
+  }
+  .conn-dot.ok { background: var(--accent2); box-shadow: 0 0 6px var(--accent2); }
+  .conn-dot.err { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+  /* ── TABS ── */
+  .tabs-bar {
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 24px;
+    overflow-x: auto;
+  }
+  .tab {
+    font-family:var(--mono); font-size:0.78rem;
+    padding: 12px 20px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    color: var(--muted);
+    white-space: nowrap;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .tab:hover { color:var(--text); background:rgba(200,240,74,0.05); }
+  .tab.active { color:var(--accent); border-bottom-color:var(--accent); background:rgba(200,240,74,0.07); }
+
+  /* ── CONTENT ── */
+  .content { max-width:1200px; margin:0 auto; padding:28px 32px; }
+  .tab-panel { display:none; }
+  .tab-panel.active { display:block; }
+
+  /* ── FORM HEADER ── */
+  .report-header {
+    display:grid; grid-template-columns:1fr 1fr 1fr;
+    gap:14px; margin-bottom:22px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:4px; padding:20px;
+  }
+  .field-group label {
+    font-family:var(--mono); font-size:0.67rem;
+    color:var(--muted); text-transform:uppercase;
+    letter-spacing:0.1em; display:block; margin-bottom:5px;
+  }
+  .field-group input, .field-group select, .field-group textarea {
+    background:var(--bg); border:1px solid var(--border);
+    color:var(--text); font-family:var(--mono); font-size:0.83rem;
+    padding:8px 12px; border-radius:3px; width:100%;
+    outline:none; transition:border-color 0.15s;
+  }
+  .field-group input:focus, .field-group select:focus, .field-group textarea:focus {
+    border-color:var(--accent);
+  }
+  .field-group select option { background:var(--surface); }
+
+  /* ── SUMMARY CARDS ── */
+  .summary-grid {
+    display:grid; grid-template-columns:repeat(4,1fr);
+    gap:12px; margin-bottom:24px;
+  }
+  .summary-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:4px; padding:16px; position:relative; overflow:hidden;
+  }
+  .summary-card::before {
+    content:''; position:absolute; top:0; left:0; right:0; height:2px;
+  }
+  .summary-card.total::before { background:var(--accent); }
+  .summary-card.ok::before { background:var(--accent2); }
+  .summary-card.low::before { background:var(--warn); }
+  .summary-card.habis::before { background:var(--danger); }
+  .summary-card .val { font-family:var(--mono); font-size:2rem; font-weight:700; line-height:1; margin-bottom:5px; }
+  .summary-card.total .val { color:var(--accent); }
+  .summary-card.ok .val { color:var(--accent2); }
+  .summary-card.low .val { color:var(--warn); }
+  .summary-card.habis .val { color:var(--danger); }
+  .summary-card .lbl { font-family:var(--mono); font-size:0.67rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); }
+
+  /* ── SECTION LABEL ── */
+  .section-label {
+    font-family:var(--mono); font-size:0.69rem; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--muted);
+    border-bottom:1px solid var(--border);
+    padding-bottom:8px; margin-bottom:14px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .section-label .badge {
+    background:var(--accent); color:#0e0f0f;
+    font-size:0.63rem; padding:2px 8px;
+    border-radius:2px; font-weight:700;
+  }
+
+  /* ── TABLE ── */
+  .table-wrapper { overflow-x:auto; border:1px solid var(--border); border-radius:4px; margin-bottom:16px; }
+  table { width:100%; border-collapse:collapse; font-family:var(--mono); font-size:0.81rem; }
+  thead tr { background:var(--surface2); border-bottom:2px solid var(--border); }
+  thead th { padding:10px 13px; text-align:left; font-size:0.67rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); white-space:nowrap; }
+  thead th:first-child { color:var(--accent); }
+  tbody tr { border-bottom:1px solid var(--border); transition:background 0.1s; }
+  tbody tr:hover { background:rgba(255,255,255,0.03); }
+  tbody td { padding:8px 13px; vertical-align:middle; }
+  tbody td input, tbody td select {
+    background:transparent; border:none; color:var(--text);
+    font-family:var(--mono); font-size:0.81rem; width:100%; outline:none;
+    padding:2px 0; border-bottom:1px solid transparent; transition:border-color 0.15s;
+  }
+  tbody td input:focus, tbody td select:focus { border-bottom-color:var(--accent); }
+  tbody td select option { background:var(--surface); }
+  .td-no { color:var(--muted); font-size:0.69rem; width:32px; }
+  .td-del { width:34px; text-align:center; }
+  .btn-del { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:3px; transition:color 0.15s; }
+  .btn-del:hover { color:var(--danger); }
+
+  /* ── BUTTONS ── */
+  .actions { display:flex; gap:9px; flex-wrap:wrap; margin-bottom:22px; }
+  .btn {
+    font-family:var(--mono); font-size:0.77rem; padding:9px 17px;
+    border-radius:3px; border:none; cursor:pointer;
+    transition:all 0.15s; font-weight:600; letter-spacing:0.05em;
+    text-transform:uppercase; display:flex; align-items:center; gap:7px;
+  }
+  .btn:disabled { opacity:0.4; cursor:not-allowed; }
+  .btn-primary { background:var(--accent); color:#0e0f0f; }
+  .btn-primary:hover:not(:disabled) { background:#d6f55a; transform:translateY(-1px); }
+  .btn-outline { background:transparent; color:var(--accent2); border:1px solid var(--accent2); }
+  .btn-outline:hover:not(:disabled) { background:rgba(74,240,200,0.1); }
+  .btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+  .btn-ghost:hover:not(:disabled) { border-color:var(--text); }
+  .btn-warn { background:transparent; color:var(--warn); border:1px solid var(--warn); }
+  .btn-warn:hover:not(:disabled) { background:rgba(240,184,74,0.1); }
+  .btn-danger { background:transparent; color:var(--danger); border:1px solid var(--danger); }
+  .btn-danger:hover:not(:disabled) { background:rgba(240,74,74,0.1); }
+
+  /* ── NOTES ── */
+  .notes-area { background:var(--surface); border:1px solid var(--border); border-radius:4px; padding:18px; margin-bottom:18px; }
+  .notes-area textarea {
+    width:100%; background:var(--bg); border:1px solid var(--border);
+    color:var(--text); font-family:var(--mono); font-size:0.82rem;
+    padding:11px; border-radius:3px; min-height:80px; outline:none;
+    resize:vertical; transition:border-color 0.15s; line-height:1.6;
+  }
+  .notes-area textarea:focus { border-color:var(--accent); }
+
+  /* ── DATABASE / SAVED TAB ── */
+  .filter-bar {
+    display:flex; gap:10px; flex-wrap:wrap; margin-bottom:20px;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:4px; padding:14px 18px; align-items:flex-end;
+  }
+  .filter-bar .field-group { flex:1; min-width:140px; }
+  .filter-bar .field-group label { margin-bottom:4px; }
+  .reports-list { display:flex; flex-direction:column; gap:10px; }
+  .report-item {
+    background:var(--surface); border:1px solid var(--border); border-radius:4px;
+    padding:15px 18px; display:flex; align-items:center; justify-content:space-between;
+    transition:border-color 0.15s;
+  }
+  .report-item:hover { border-color:var(--accent); }
+  .report-item-title { font-family:var(--mono); font-weight:600; font-size:0.88rem; margin-bottom:4px; }
+  .report-item-meta { font-family:var(--mono); font-size:0.69rem; color:var(--muted); }
+  .report-item-actions { display:flex; gap:7px; flex-shrink:0; margin-left:12px; }
+  .btn-sm {
+    font-family:var(--mono); font-size:0.69rem; padding:5px 11px;
+    border-radius:3px; border:none; cursor:pointer; font-weight:600;
+    letter-spacing:0.04em; text-transform:uppercase; transition:all 0.15s;
+    white-space:nowrap;
+  }
+  .btn-sm-view { background:rgba(200,240,74,0.12); color:var(--accent); }
+  .btn-sm-view:hover { background:rgba(200,240,74,0.22); }
+  .btn-sm-img { background:rgba(74,240,200,0.1); color:var(--accent2); }
+  .btn-sm-img:hover { background:rgba(74,240,200,0.2); }
+  .btn-sm-del { background:rgba(240,74,74,0.1); color:var(--danger); }
+  .btn-sm-del:hover { background:rgba(240,74,74,0.2); }
+  .status-pill {
+    display:inline-block; font-size:0.63rem; padding:2px 7px;
+    border-radius:2px; font-family:var(--mono); font-weight:700;
+    text-transform:uppercase; letter-spacing:0.05em; margin-left:6px;
+  }
+  .pill-aman { background:rgba(74,240,200,0.15); color:var(--accent2); }
+  .pill-rendah { background:rgba(240,184,74,0.15); color:var(--warn); }
+  .pill-habis { background:rgba(240,74,74,0.15); color:var(--danger); }
+
+  /* ── LOADING SPINNER ── */
+  .spinner {
+    display:inline-block; width:16px; height:16px;
+    border:2px solid var(--border); border-top-color:var(--accent);
+    border-radius:50%; animation:spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .loading-row { text-align:center; padding:40px; color:var(--muted); font-family:var(--mono); font-size:0.82rem; }
+
+  /* ── EMPTY STATE ── */
+  .empty-state { text-align:center; padding:60px 20px; color:var(--muted); font-family:var(--mono); font-size:0.82rem; }
+  .empty-state .icon { font-size:2.5rem; margin-bottom:12px; opacity:0.4; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display:none; position:fixed; inset:0;
+    background:rgba(0,0,0,0.82); z-index:999;
+    align-items:center; justify-content:center;
+  }
+  .modal-overlay.open { display:flex; }
+  .modal {
+    background:var(--surface); border:1px solid var(--border); border-radius:6px;
+    width:90%; max-width:760px; max-height:88vh; overflow-y:auto;
+    animation:slideUp 0.2s ease;
+  }
+  @keyframes slideUp { from{transform:translateY(20px);opacity:0} to{transform:translateY(0);opacity:1} }
+  .modal-head {
+    padding:16px 22px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; background:var(--surface);
+  }
+  .modal-title { font-family:var(--mono); font-weight:700; font-size:0.88rem; color:var(--accent); letter-spacing:0.05em; }
+  .modal-close { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1.3rem; transition:color 0.15s; }
+  .modal-close:hover { color:var(--danger); }
+  .modal-body { padding:22px; }
+
+  /* ── SETUP MODAL ── */
+  .setup-step {
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:4px; padding:16px 18px; margin-bottom:12px;
+  }
+  .setup-step-num {
+    font-family:var(--mono); font-size:0.68rem; color:var(--accent);
+    text-transform:uppercase; letter-spacing:0.1em; margin-bottom:6px;
+  }
+  .setup-step p { font-size:0.85rem; color:var(--text); line-height:1.6; margin-bottom:8px; }
+  .setup-step code {
+    display:block; background:var(--bg); border:1px solid var(--border);
+    padding:10px 14px; border-radius:3px; font-family:var(--mono);
+    font-size:0.78rem; color:var(--accent2); white-space:pre-wrap;
+    word-break:break-all; margin-top:6px;
+  }
+  .setup-step input {
+    background:var(--bg); border:1px solid var(--border); color:var(--text);
+    font-family:var(--mono); font-size:0.83rem; padding:9px 12px;
+    border-radius:3px; width:100%; outline:none; margin-top:8px;
+    transition:border-color 0.15s;
+  }
+  .setup-step input:focus { border-color:var(--accent); }
+  .copy-btn {
+    font-family:var(--mono); font-size:0.7rem; padding:4px 10px;
+    background:rgba(200,240,74,0.12); color:var(--accent);
+    border:1px solid rgba(200,240,74,0.3); border-radius:3px;
+    cursor:pointer; float:right; margin-top:-2px; transition:all 0.15s;
+  }
+  .copy-btn:hover { background:rgba(200,240,74,0.22); }
+
+  /* ── PRINT VIEW ── */
+  #print-view {
+    background:#fff; color:#111; font-family:'IBM Plex Mono',monospace;
+    padding:28px; border-radius:4px;
+  }
+  #print-view h2 { font-size:1.05rem; margin-bottom:4px; }
+  #print-view .pv-meta { font-size:0.73rem; color:#555; margin-bottom:14px; padding-bottom:10px; border-bottom:2px solid #111; }
+  #print-view table { width:100%; border-collapse:collapse; font-size:0.76rem; margin-bottom:14px; }
+  #print-view thead th { background:#111; color:#fff; padding:6px 9px; text-align:left; font-size:0.68rem; text-transform:uppercase; letter-spacing:0.07em; }
+  #print-view tbody td { padding:5px 9px; border-bottom:1px solid #ddd; }
+  #print-view tbody tr:nth-child(even) { background:#f5f5f5; }
+  #print-view .pv-notes { font-size:0.76rem; color:#333; border-top:1px solid #ccc; padding-top:10px; margin-top:4px; }
+  #print-view .pv-footer { font-size:0.66rem; color:#999; margin-top:18px; text-align:right; border-top:1px solid #eee; padding-top:8px; }
+  .pv-summary { display:flex; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+  .pv-sum-item { font-size:0.71rem; padding:5px 11px; border:1px solid #ccc; border-radius:3px; }
+
+  /* ── TOAST ── */
+  .toast {
+    position:fixed; bottom:22px; right:22px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-left:3px solid var(--accent); color:var(--text);
+    font-family:var(--mono); font-size:0.77rem; padding:11px 16px;
+    border-radius:3px; z-index:9999;
+    transform:translateX(120%); transition:transform 0.25s;
+    max-width:320px;
+  }
+  .toast.show { transform:translateX(0); }
+  .toast.warn { border-left-color:var(--warn); }
+  .toast.err { border-left-color:var(--danger); }
+
+  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar-track { background:var(--bg); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+  @media(max-width:768px) {
+    .content { padding:14px; }
+    .report-header { grid-template-columns:1fr; }
+    .summary-grid { grid-template-columns:1fr 1fr; }
+    .header { padding:10px 14px; }
+    #setup-banner { flex-wrap:wrap; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP BANNER -->
+<div id="setup-banner">
+  <span>⚠ API belum dikonfigurasi. Website ini belum terhubung ke Google Sheets.</span>
+  <a onclick="openSetup()">Cara Setup →</a>
+  <button onclick="openSetup()">KONFIGURASI SEKARANG</button>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">STOK<span>POOR</span> <span style="font-size:0.63rem;margin-left:4px;color:var(--muted)">// SISTEM LAPORAN STOK PUBLIK</span></div>
+  <div class="header-right">
+    <div style="display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.7rem;color:var(--muted)">
+      <div class="conn-dot" id="connDot"></div>
+      <span id="connLabel">Tidak terhubung</span>
+    </div>
+    <div class="header-meta">
+      <strong id="clock">--:--:--</strong>
+      <span id="dateDisplay">--</span>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-bar">
+  <div class="tab active" data-tab="editor" onclick="switchTab('editor')">✏ Buat Laporan</div>
+  <div class="tab" data-tab="database" onclick="switchTab('database');loadReports()">📊 Database Publik</div>
+</div>
+
+<!-- ═══════════════════════════════ EDITOR ═══════════════════════════════ -->
+<div id="panel-editor" class="tab-panel active">
+  <div class="content">
+    <div class="report-header">
+      <div class="field-group"><label>Nama Gudang / Lokasi</label><input type="text" id="gudang" placeholder="cth: Gudang Utama A"></div>
+      <div class="field-group"><label>Tanggal Laporan</label><input type="date" id="tanggal"></div>
+      <div class="field-group"><label>Petugas Stok</label><input type="text" id="petugas" placeholder="Nama petugas"></div>
+      <div class="field-group"><label>Shift</label>
+        <select id="shift">
+          <option>Pagi (06:00-14:00)</option>
+          <option>Siang (14:00-22:00)</option>
+          <option>Malam (22:00-06:00)</option>
+          <option>Full Day</option>
+        </select>
+      </div>
+      <div class="field-group"><label>Nomor Laporan</label><input type="text" id="noLaporan" placeholder="Auto-generate"></div>
+      <div class="field-group"><label>Kategori Stok</label><input type="text" id="kategori" placeholder="cth: Suku Cadang"></div>
+    </div>
+
+    <div class="summary-grid">
+      <div class="summary-card total"><div class="val" id="sumTotal">0</div><div class="lbl">Total Item</div></div>
+      <div class="summary-card ok"><div class="val" id="sumOk">0</div><div class="lbl">Stok Aman</div></div>
+      <div class="summary-card low"><div class="val" id="sumLow">0</div><div class="lbl">Stok Rendah</div></div>
+      <div class="summary-card habis"><div class="val" id="sumHabis">0</div><div class="lbl">Stok Habis</div></div>
+    </div>
+
+    <div class="section-label"><span>Daftar Item Stok</span><span class="badge" id="itemCount">0 item</span></div>
+    <div class="table-wrapper" id="tableContainer">
+      <table id="stokTable">
+        <thead><tr>
+          <th class="td-no">#</th>
+          <th style="min-width:160px">Nama Barang</th>
+          <th style="min-width:100px">Kode/SKU</th>
+          <th style="min-width:75px">Satuan</th>
+          <th style="min-width:75px">Stok Awal</th>
+          <th style="min-width:75px">Masuk</th>
+          <th style="min-width:75px">Keluar</th>
+          <th style="min-width:75px">Stok Akhir</th>
+          <th style="min-width:75px">Min. Stok</th>
+          <th style="min-width:90px">Status</th>
+          <th style="min-width:110px">Lokasi Rak</th>
+          <th class="td-del"></th>
+        </tr></thead>
+        <tbody id="stokBody"></tbody>
+      </table>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-ghost" onclick="addRow()">＋ Tambah Baris</button>
+      <button class="btn btn-ghost" onclick="addRows5()">＋ 5 Baris</button>
+      <button class="btn btn-ghost" onclick="clearTable()">🗑 Kosongkan</button>
+    </div>
+
+    <div class="notes-area">
+      <div class="section-label" style="margin-bottom:10px"><span>Catatan & Keterangan</span></div>
+      <textarea id="catatan" placeholder="Tuliskan catatan tambahan, temuan anomali, rekomendasi pengadaan..."></textarea>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-primary" id="btnSave" onclick="saveLaporan()">
+        <span class="spinner" id="saveSpinner" style="display:none"></span>
+        💾 Simpan ke Database
+      </button>
+      <button class="btn btn-outline" onclick="previewLaporan()">🖼 Preview & Ekspor Gambar</button>
+      <button class="btn btn-warn" onclick="exportTableImg()">📷 Ekspor Tabel</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ DATABASE ═══════════════════════════════ -->
+<div id="panel-database" class="tab-panel">
+  <div class="content">
+    <div class="filter-bar">
+      <div class="field-group"><label>Cari Gudang / No. Laporan</label><input type="text" id="fSearch" placeholder="Ketik untuk cari..." oninput="filterReports()"></div>
+      <div class="field-group"><label>Dari Tanggal</label><input type="date" id="fFrom" onchange="filterReports()"></div>
+      <div class="field-group"><label>Sampai Tanggal</label><input type="date" id="fTo" onchange="filterReports()"></div>
+      <div class="field-group" style="min-width:120px"><label>Status</label>
+        <select id="fStatus" onchange="filterReports()">
+          <option value="">Semua</option>
+          <option value="ada_habis">Ada Habis</option>
+          <option value="ada_rendah">Ada Rendah</option>
+          <option value="semua_aman">Semua Aman</option>
+        </select>
+      </div>
+      <button class="btn btn-ghost" style="align-self:flex-end" onclick="loadReports()">
+        <span class="spinner" id="loadSpinner" style="display:none"></span>
+        🔄 Refresh
+      </button>
+    </div>
+
+    <div class="section-label">
+      <span>Laporan Tersimpan</span>
+      <span class="badge" id="dbCount">0 laporan</span>
+    </div>
+
+    <div class="reports-list" id="reportsList">
+      <div class="loading-row"><div class="spinner"></div><br>Memuat data...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ MODAL PREVIEW ═══════════════════════════════ -->
+<div class="modal-overlay" id="previewModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">PREVIEW LAPORAN</div>
+      <button class="modal-close" onclick="closeModal('previewModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="print-view"></div>
+      <div style="margin-top:18px;display:flex;gap:9px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="downloadPreviewImg()">⬇ Unduh Gambar</button>
+        <button class="btn btn-ghost" onclick="closeModal('previewModal')">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════ MODAL SETUP ═══════════════════════════════ -->
+<div class="modal-overlay" id="setupModal">
+  <div class="modal" style="max-width:680px">
+    <div class="modal-head">
+      <div class="modal-title">⚙ KONFIGURASI GOOGLE SHEETS API</div>
+      <button class="modal-close" onclick="closeModal('setupModal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-family:var(--mono);font-size:0.8rem;color:var(--muted);margin-bottom:18px;line-height:1.7">
+        Ikuti langkah berikut <strong style="color:var(--accent)">satu kali saja</strong>. Setelah selesai, semua karyawan bisa mengakses database ini dari browser mana pun.
+      </p>
+
+      <div class="setup-step">
+        <div class="setup-step-num">Langkah 1 — Buat Google Spreadsheet</div>
+        <p>Buka <strong>sheets.google.com</strong> → buat spreadsheet baru → beri nama <em>"Database Stok"</em>. Salin ID spreadsheet dari URL (bagian antara <code style="display:inline;background:none;border:none;padding:0;color:var(--warn)">/d/</code> dan <code style="display:inline;background:none;border:none;padding:0;color:var(--warn)">/edit</code>).</p>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">Langkah 2 — Buat Google Apps Script</div>
+        <p>Di spreadsheet, klik <strong>Extensions → Apps Script</strong>. Hapus semua kode yang ada, lalu paste kode berikut:</p>
+        <button class="copy-btn" onclick="copyCode()">📋 Salin Kode</button>
+        <code id="gasCode">const SHEET_NAME = "Laporan";
+const SECRET = "GANTI_DENGAN_PASSWORD_RAHASIA";
+
+function doGet(e) {
+  return handleReq(e);
+}
+function doPost(e) {
+  return handleReq(e);
+}
+
+function handleReq(e) {
+  const p = e.parameter || {};
+  const action = p.action || (e.postData ? JSON.parse(e.postData.contents).action : "");
+  const body = e.postData ? JSON.parse(e.postData.contents) : p;
+
+  const headers = {
+    "Access-Control-Allow-Origin": "*",
+    "Content-Type": "application/json"
+  };
+
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    let sheet = ss.getSheetByName(SHEET_NAME);
+    if (!sheet) {
+      sheet = ss.insertSheet(SHEET_NAME);
+      sheet.appendRow(["ID","Timestamp","NoLaporan","Gudang","Tanggal","Petugas","Shift","Kategori","Catatan","Rows","TotalItem","JmlAman","JmlRendah","JmlHabis"]);
+      sheet.setFrozenRows(1);
+    }
+
+    if (action === "save") {
+      const d = body;
+      const id = Utilities.getUuid();
+      sheet.appendRow([
+        id, new Date().toLocaleString("id-ID"),
+        d.noLaporan||"", d.gudang||"", d.tanggal||"",
+        d.petugas||"", d.shift||"", d.kategori||"",
+        d.catatan||"", JSON.stringify(d.rows||[]),
+        d.totalItem||0, d.jmlAman||0, d.jmlRendah||0, d.jmlHabis||0
+      ]);
+      return ContentService.createTextOutput(JSON.stringify({ok:true,id}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === "list") {
+      const rows = sheet.getDataRange().getValues();
+      const headers = rows[0];
+      const data = rows.slice(1).reverse().map(r => {
+        const obj = {};
+        headers.forEach((h,i) => obj[h] = r[i]);
+        try { obj.Rows = JSON.parse(obj.Rows); } catch(e) { obj.Rows = []; }
+        return obj;
+      });
+      return ContentService.createTextOutput(JSON.stringify({ok:true,data}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    if (action === "delete") {
+      if (body.secret !== SECRET) {
+        return ContentService.createTextOutput(JSON.stringify({ok:false,msg:"Unauthorized"}))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+      const rows = sheet.getDataRange().getValues();
+      for (let i = rows.length - 1; i >= 1; i--) {
+        if (rows[i][0] === body.id) { sheet.deleteRow(i+1); break; }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ok:true}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    return ContentService.createTextOutput(JSON.stringify({ok:false,msg:"Unknown action"}))
+      .setMimeType(ContentService.MimeType.JSON);
+
+  } catch(err) {
+    return ContentService.createTextOutput(JSON.stringify({ok:false,msg:err.toString()}))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+}</code>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">Langkah 3 — Edit Password Hapus (Opsional)</div>
+        <p>Di baris <code style="display:inline;background:none;border:none;padding:0;color:var(--warn)">const SECRET = "GANTI_DENGAN_PASSWORD_RAHASIA";</code> ganti dengan password yang kamu inginkan untuk fungsi hapus laporan.</p>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">Langkah 4 — Deploy sebagai Web App</div>
+        <p>Klik <strong>Deploy → New Deployment → Web App</strong>.<br>
+        Atur: <em>Execute as: Me</em> | <em>Who has access: Anyone</em><br>
+        Klik Deploy → izinkan akses → salin URL yang diberikan.</p>
+      </div>
+
+      <div class="setup-step">
+        <div class="setup-step-num">Langkah 5 — Tempel URL di sini</div>
+        <p>Paste URL Web App dari langkah 4:</p>
+        <input type="text" id="apiUrlInput" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
+        <p style="margin-top:10px">Password untuk hapus laporan (SECRET yang kamu set):</p>
+        <input type="text" id="secretInput" placeholder="password_rahasia_kamu">
+      </div>
+
+      <div style="display:flex;gap:9px;margin-top:18px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="saveConfig()">✓ Simpan Konfigurasi</button>
+        <button class="btn btn-outline" onclick="testConnection()">🔌 Test Koneksi</button>
+        <button class="btn btn-ghost" onclick="closeModal('setupModal')">Tutup</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════
+let API_URL = localStorage.getItem('stokpoor_api') || '';
+let API_SECRET = localStorage.getItem('stokpoor_secret') || '';
+let allReports = [];
+let rowCount = 0;
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  const today = new Date();
+  document.getElementById('tanggal').value = today.toISOString().split('T')[0];
+  autoNoLaporan();
+  for(let i=0;i<5;i++) addRow();
+  updateSummary();
+  startClock();
+  checkConfig();
+});
+
+function checkConfig() {
+  if(API_URL) {
+    document.getElementById('setup-banner').style.display = 'none';
+    document.getElementById('apiUrlInput').value = API_URL;
+    document.getElementById('secretInput').value = API_SECRET;
+    setConn('ok', 'Terhubung');
+  }
+}
+
+function autoNoLaporan() {
+  const today = new Date();
+  const pad = n => String(n).padStart(3,'0');
+  const ymd = today.getFullYear().toString().slice(-2) + pad(today.getMonth()+1) + pad(today.getDate());
+  document.getElementById('noLaporan').value = `RPT-${ymd}-${pad(Math.floor(Math.random()*900)+100)}`;
+}
+
+function startClock() {
+  const tick = () => {
+    const now = new Date();
+    document.getElementById('clock').textContent = now.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    document.getElementById('dateDisplay').textContent = now.toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  };
+  tick(); setInterval(tick, 1000);
+}
+
+function setConn(state, label) {
+  const dot = document.getElementById('connDot');
+  const lbl = document.getElementById('connLabel');
+  dot.className = `conn-dot ${state}`;
+  lbl.textContent = label;
+}
+
+// ═══════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════
+function switchTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === id));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `panel-${id}`));
+}
+
+// ═══════════════════════════════════════════════
+// TABLE ROWS
+// ═══════════════════════════════════════════════
+function addRow() {
+  rowCount++;
+  const n = rowCount;
+  const tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td class="td-no">${n}</td>
+    <td><input type="text" placeholder="Nama barang..."></td>
+    <td><input type="text" placeholder="SKU-001"></td>
+    <td><input type="text" placeholder="pcs"></td>
+    <td><input type="number" min="0" value="0" oninput="calcRow(this)"></td>
+    <td><input type="number" min="0" value="0" oninput="calcRow(this)"></td>
+    <td><input type="number" min="0" value="0" oninput="calcRow(this)"></td>
+    <td><input type="number" min="0" value="0" readonly style="color:var(--accent2);font-weight:600"></td>
+    <td><input type="number" min="0" value="0" oninput="calcRow(this)"></td>
+    <td><select onchange="updateSummary()">
+      <option value="aman">Aman</option>
+      <option value="rendah">Rendah</option>
+      <option value="habis">Habis</option>
+    </select></td>
+    <td><input type="text" placeholder="Rak A-01"></td>
+    <td class="td-del"><button class="btn-del" onclick="this.closest('tr').remove();updateSummary()">✕</button></td>
+  `;
+  document.getElementById('stokBody').appendChild(tr);
+  updateSummary();
+}
+
+function addRows5() { for(let i=0;i<5;i++) addRow(); }
+function clearTable() {
+  if(!confirm('Kosongkan semua baris?')) return;
+  document.getElementById('stokBody').innerHTML = '';
+  rowCount = 0; updateSummary();
+}
+
+function calcRow(input) {
+  const tr = input.closest('tr');
+  const nums = tr.querySelectorAll('input[type="number"]');
+  const awal = +nums[0].value||0, masuk = +nums[1].value||0, keluar = +nums[2].value||0;
+  const akhir = Math.max(0, awal+masuk-keluar);
+  nums[3].value = akhir;
+  const min = +nums[4].value||0;
+  const sel = tr.querySelector('select');
+  sel.value = akhir<=0 ? 'habis' : akhir<=min ? 'rendah' : 'aman';
+  updateSummary();
+}
+
+function updateSummary() {
+  const rows = document.querySelectorAll('#stokBody tr');
+  let ok=0,low=0,habis=0;
+  rows.forEach(tr => {
+    const s = tr.querySelector('select')?.value;
+    if(s==='aman') ok++; else if(s==='rendah') low++; else if(s==='habis') habis++;
+  });
+  document.getElementById('sumTotal').textContent = rows.length;
+  document.getElementById('sumOk').textContent = ok;
+  document.getElementById('sumLow').textContent = low;
+  document.getElementById('sumHabis').textContent = habis;
+  document.getElementById('itemCount').textContent = `${rows.length} item`;
+}
+
+// ═══════════════════════════════════════════════
+// COLLECT DATA
+// ═══════════════════════════════════════════════
+function collectRows() {
+  return Array.from(document.querySelectorAll('#stokBody tr')).map((tr,i) => {
+    const inputs = tr.querySelectorAll('input,select');
+    return {
+      no:i+1, nama:inputs[0]?.value||'', kode:inputs[1]?.value||'',
+      satuan:inputs[2]?.value||'', awal:inputs[3]?.value||'0',
+      masuk:inputs[4]?.value||'0', keluar:inputs[5]?.value||'0',
+      akhir:inputs[6]?.value||'0', min:inputs[7]?.value||'0',
+      status:inputs[8]?.value||'aman', lokasi:inputs[9]?.value||''
+    };
+  });
+}
+
+// ═══════════════════════════════════════════════
+// SAVE TO GOOGLE SHEETS
+// ═══════════════════════════════════════════════
+async function saveLaporan() {
+  if(!API_URL) { openSetup(); showToast('⚠ Konfigurasi API terlebih dahulu', 'warn'); return; }
+
+  const gudang = document.getElementById('gudang').value;
+  const tanggal = document.getElementById('tanggal').value;
+  if(!gudang || !tanggal) { showToast('✗ Isi Nama Gudang dan Tanggal', 'err'); return; }
+
+  const rows = collectRows();
+  const jmlAman = rows.filter(r=>r.status==='aman').length;
+  const jmlRendah = rows.filter(r=>r.status==='rendah').length;
+  const jmlHabis = rows.filter(r=>r.status==='habis').length;
+
+  const payload = {
+    action: 'save',
+    noLaporan: document.getElementById('noLaporan').value,
+    gudang, tanggal,
+    petugas: document.getElementById('petugas').value,
+    shift: document.getElementById('shift').value,
+    kategori: document.getElementById('kategori').value,
+    catatan: document.getElementById('catatan').value,
+    rows, totalItem: rows.length, jmlAman, jmlRendah, jmlHabis
+  };
+
+  const btn = document.getElementById('btnSave');
+  const spinner = document.getElementById('saveSpinner');
+  btn.disabled = true;
+  spinner.style.display = 'inline-block';
+
+  try {
+    const res = await fetch(API_URL, {
+      method:'POST',
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data.ok) {
+      showToast('✓ Laporan berhasil disimpan ke database');
+      autoNoLaporan();
+    } else {
+      showToast(`✗ Gagal: ${data.msg}`, 'err');
+    }
+  } catch(err) {
+    showToast('✗ Gagal terhubung ke API. Cek koneksi.', 'err');
+    setConn('err', 'Gagal terhubung');
+  } finally {
+    btn.disabled = false;
+    spinner.style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// LOAD FROM GOOGLE SHEETS
+// ═══════════════════════════════════════════════
+async function loadReports() {
+  if(!API_URL) { document.getElementById('reportsList').innerHTML = '<div class="empty-state"><div class="icon">⚙</div><div>API belum dikonfigurasi.<br>Klik banner di atas untuk setup.</div></div>'; return; }
+
+  const spinner = document.getElementById('loadSpinner');
+  spinner.style.display = 'inline-block';
+  document.getElementById('reportsList').innerHTML = '<div class="loading-row"><div class="spinner"></div><br>Memuat dari Google Sheets...</div>';
+
+  try {
+    const res = await fetch(`${API_URL}?action=list`);
+    const data = await res.json();
+    if(data.ok) {
+      allReports = data.data;
+      setConn('ok', `${allReports.length} laporan`);
+      filterReports();
+    } else {
+      showToast(`✗ ${data.msg}`, 'err');
+    }
+  } catch(err) {
+    setConn('err', 'Gagal terhubung');
+    document.getElementById('reportsList').innerHTML = '<div class="empty-state"><div class="icon">🔌</div><div>Gagal terhubung ke API.<br>Pastikan konfigurasi benar.</div></div>';
+    showToast('✗ Gagal memuat data', 'err');
+  } finally {
+    spinner.style.display = 'none';
+  }
+}
+
+function filterReports() {
+  const q = document.getElementById('fSearch').value.toLowerCase();
+  const from = document.getElementById('fFrom').value;
+  const to = document.getElementById('fTo').value;
+  const status = document.getElementById('fStatus').value;
+
+  let filtered = allReports.filter(r => {
+    const matchQ = !q || (r.Gudang||'').toLowerCase().includes(q) || (r.NoLaporan||'').toLowerCase().includes(q) || (r.Petugas||'').toLowerCase().includes(q);
+    const matchFrom = !from || r.Tanggal >= from;
+    const matchTo = !to || r.Tanggal <= to;
+    let matchStatus = true;
+    if(status==='ada_habis') matchStatus = +r.JmlHabis > 0;
+    else if(status==='ada_rendah') matchStatus = +r.JmlRendah > 0;
+    else if(status==='semua_aman') matchStatus = +r.JmlHabis===0 && +r.JmlRendah===0;
+    return matchQ && matchFrom && matchTo && matchStatus;
+  });
+
+  document.getElementById('dbCount').textContent = `${filtered.length} laporan`;
+  renderReports(filtered);
+}
+
+function renderReports(list) {
+  const el = document.getElementById('reportsList');
+  if(!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">📂</div><div>Tidak ada laporan ditemukan</div></div>';
+    return;
+  }
+
+  el.innerHTML = list.map(r => {
+    const habis = +r.JmlHabis||0, rendah = +r.JmlRendah||0;
+    const pills = [
+      habis > 0 ? `<span class="status-pill pill-habis">${habis} habis</span>` : '',
+      rendah > 0 ? `<span class="status-pill pill-rendah">${rendah} rendah</span>` : '',
+      habis===0 && rendah===0 ? `<span class="status-pill pill-aman">semua aman</span>` : ''
+    ].join('');
+
+    return `<div class="report-item">
+      <div style="flex:1">
+        <div class="report-item-title">${r.NoLaporan||'Laporan'} — ${r.Gudang||'-'} ${pills}</div>
+        <div class="report-item-meta">${r.Tanggal||'-'} &nbsp;|&nbsp; ${r.Shift||'-'} &nbsp;|&nbsp; Petugas: ${r.Petugas||'-'} &nbsp;|&nbsp; ${r.TotalItem||0} item &nbsp;|&nbsp; ${r.Timestamp||''}</div>
+      </div>
+      <div class="report-item-actions">
+        <button class="btn-sm btn-sm-view" onclick='viewReport(${JSON.stringify(JSON.stringify(r))})'>👁 Lihat</button>
+        <button class="btn-sm btn-sm-img" onclick='exportReportImg(${JSON.stringify(JSON.stringify(r))})'>🖼 Gambar</button>
+        <button class="btn-sm btn-sm-del" onclick='deleteReport("${r.ID}")'>🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════
+// DELETE
+// ═══════════════════════════════════════════════
+async function deleteReport(id) {
+  const pw = prompt('Masukkan password admin untuk menghapus laporan:');
+  if(!pw) return;
+  try {
+    const res = await fetch(API_URL, {
+      method:'POST',
+      body: JSON.stringify({action:'delete', id, secret:pw})
+    });
+    const data = await res.json();
+    if(data.ok) { showToast('✓ Laporan dihapus'); loadReports(); }
+    else showToast(`✗ ${data.msg}`, 'err');
+  } catch(err) {
+    showToast('✗ Gagal menghapus', 'err');
+  }
+}
+
+// ═══════════════════════════════════════════════
+// PREVIEW & EXPORT
+// ═══════════════════════════════════════════════
+function buildPrintHTML(r) {
+  const rows = (r.Rows||r.rows||[]).filter(x => x.nama||x.Nama);
+  const norm = rows.map(x => ({
+    nama:x.nama||x.Nama||'', kode:x.kode||x.Kode||'',
+    satuan:x.satuan||x.Satuan||'', awal:x.awal||x.Awal||0,
+    masuk:x.masuk||x.Masuk||0, keluar:x.keluar||x.Keluar||0,
+    akhir:x.akhir||x.Akhir||0, min:x.min||x.Min||0,
+    status:x.status||x.Status||'aman', lokasi:x.lokasi||x.Lokasi||''
+  }));
+  const ok=norm.filter(x=>x.status==='aman').length;
+  const low=norm.filter(x=>x.status==='rendah').length;
+  const habis=norm.filter(x=>x.status==='habis').length;
+  const sc=s=>s==='aman'?'#1a6640':s==='rendah'?'#7a5510':'#8a1a1a';
+  const sl=s=>s==='aman'?'AMAN':s==='rendah'?'RENDAH':'HABIS';
+
+  return `<h2>${r.NoLaporan||r.noLaporan||'LAPORAN STOK'} — ${r.Gudang||r.gudang||'-'}</h2>
+  <div class="pv-meta">
+    Tanggal: ${r.Tanggal||r.tanggal||'-'} &nbsp;|&nbsp; ${r.Shift||r.shift||'-'} &nbsp;|&nbsp;
+    Petugas: ${r.Petugas||r.petugas||'-'} &nbsp;|&nbsp; Kategori: ${r.Kategori||r.kategori||'-'}
+    &nbsp;|&nbsp; Disimpan: ${r.Timestamp||r.saved||''}
+  </div>
+  <div class="pv-summary">
+    <div class="pv-sum-item">Total: <strong>${norm.length}</strong></div>
+    <div class="pv-sum-item" style="color:#1a6640">Aman: <strong>${ok}</strong></div>
+    <div class="pv-sum-item" style="color:#7a5510">Rendah: <strong>${low}</strong></div>
+    <div class="pv-sum-item" style="color:#8a1a1a">Habis: <strong>${habis}</strong></div>
+  </div>
+  <table>
+    <thead><tr><th>#</th><th>Nama Barang</th><th>Kode</th><th>Sat.</th><th>Awal</th><th>Masuk</th><th>Keluar</th><th>Akhir</th><th>Min.</th><th>Status</th><th>Lokasi</th></tr></thead>
+    <tbody>${norm.map((row,i)=>`<tr>
+      <td>${i+1}</td><td>${row.nama}</td><td>${row.kode||'-'}</td><td>${row.satuan||'-'}</td>
+      <td>${row.awal}</td><td>${row.masuk}</td><td>${row.keluar}</td>
+      <td><strong>${row.akhir}</strong></td><td>${row.min}</td>
+      <td style="color:${sc(row.status)};font-weight:700">${sl(row.status)}</td>
+      <td>${row.lokasi||'-'}</td>
+    </tr>`).join('')}</tbody>
+  </table>
+  ${(r.Catatan||r.catatan)?`<div class="pv-notes"><strong>Catatan:</strong> ${r.Catatan||r.catatan}</div>`:''}
+  <div class="pv-footer">STOKPOOR — Laporan Stok Harian &nbsp;|&nbsp; Dicetak: ${new Date().toLocaleString('id-ID')}</div>`;
+}
+
+function viewReport(rStr) {
+  const r = JSON.parse(rStr);
+  document.getElementById('print-view').innerHTML = buildPrintHTML(r);
+  document.getElementById('previewModal').classList.add('open');
+}
+
+function exportReportImg(rStr) {
+  const r = JSON.parse(rStr);
+  document.getElementById('print-view').innerHTML = buildPrintHTML(r);
+  document.getElementById('previewModal').classList.add('open');
+  setTimeout(downloadPreviewImg, 400);
+}
+
+function previewLaporan() {
+  const rows = collectRows();
+  const r = {
+    noLaporan: document.getElementById('noLaporan').value,
+    gudang: document.getElementById('gudang').value||'Gudang',
+    tanggal: document.getElementById('tanggal').value,
+    petugas: document.getElementById('petugas').value,
+    shift: document.getElementById('shift').value,
+    kategori: document.getElementById('kategori').value,
+    catatan: document.getElementById('catatan').value,
+    rows, saved: new Date().toLocaleString('id-ID')
+  };
+  document.getElementById('print-view').innerHTML = buildPrintHTML(r);
+  document.getElementById('previewModal').classList.add('open');
+}
+
+async function downloadPreviewImg() {
+  showToast('🖼 Memproses gambar...');
+  try {
+    const canvas = await html2canvas(document.getElementById('print-view'), {backgroundColor:'#fff',scale:2,logging:false});
+    const a = document.createElement('a');
+    a.download = `laporan-stok-${Date.now()}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    showToast('✓ Gambar berhasil diunduh');
+  } catch(e) { showToast('✗ Gagal ekspor', 'err'); }
+}
+
+async function exportTableImg() {
+  showToast('📷 Mengekspor tabel...');
+  try {
+    const canvas = await html2canvas(document.getElementById('tableContainer'), {backgroundColor:'#161818',scale:2,logging:false});
+    const a = document.createElement('a');
+    a.download = `tabel-stok-${Date.now()}.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+    showToast('✓ Gambar tabel diunduh');
+  } catch(e) { showToast('✗ Gagal ekspor', 'err'); }
+}
+
+// ═══════════════════════════════════════════════
+// SETUP / CONFIG
+// ═══════════════════════════════════════════════
+function openSetup() { document.getElementById('setupModal').classList.add('open'); }
+
+function saveConfig() {
+  const url = document.getElementById('apiUrlInput').value.trim();
+  const secret = document.getElementById('secretInput').value.trim();
+  if(!url) { showToast('✗ URL tidak boleh kosong', 'err'); return; }
+  API_URL = url;
+  API_SECRET = secret;
+  localStorage.setItem('stokpoor_api', url);
+  localStorage.setItem('stokpoor_secret', secret);
+  document.getElementById('setup-banner').style.display = 'none';
+  setConn('ok', 'Terhubung');
+  showToast('✓ Konfigurasi disimpan');
+  closeModal('setupModal');
+}
+
+async function testConnection() {
+  const url = document.getElementById('apiUrlInput').value.trim();
+  if(!url) { showToast('✗ Isi URL terlebih dahulu', 'err'); return; }
+  showToast('🔌 Menguji koneksi...');
+  try {
+    const res = await fetch(`${url}?action=list`);
+    const data = await res.json();
+    if(data.ok) showToast(`✓ Koneksi berhasil! ${data.data.length} laporan ditemukan`);
+    else showToast(`⚠ API merespons tapi ada error: ${data.msg}`, 'warn');
+  } catch(e) {
+    showToast('✗ Gagal terhubung. Cek URL dan pastikan Web App sudah di-deploy.', 'err');
+  }
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(document.getElementById('gasCode').textContent);
+  showToast('✓ Kode disalin ke clipboard');
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+let toastT;
+function showToast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = `toast show ${type}`;
+  clearTimeout(toastT);
+  toastT = setTimeout(() => el.classList.remove('show'), 3500);
+}
+</script>
+</body>
+</html>
