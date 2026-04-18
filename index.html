@@ -399,7 +399,7 @@
 <div id="panel-editor" class="tab-panel active">
   <div class="content">
     <div class="report-header">
-      <div class="field-group"><label>Nama</label><input type="text" id="gudang" placeholder="cth: Gudang Utama A"></div>
+      <div class="field-group"><label>Nama</label><input type="text" id="gudang" placeholder="cth: Produksi 1"></div>
       <div class="field-group"><label>Tanggal Laporan</label><input type="date" id="tanggal"></div>
       <div class="field-group"><label>Petugas Stok</label><input type="text" id="petugas" placeholder="Nama petugas"></div>
       <div class="field-group"><label>Shift</label>
@@ -410,7 +410,7 @@
         </select>
       </div>
       <div class="field-group"><label>Nomor Laporan</label><input type="text" id="noLaporan" placeholder="Auto-generate"></div>
-      <div class="field-group"><label>Kategori Stok</label><input type="text" id="kategori" placeholder="cth: Suku Cadang"></div>
+      <div class="field-group"><label>Kategori Stok</label><input type="text" id="kategori" placeholder="cth: Produksi"></div>
     </div>
 
     <div class="summary-grid">
@@ -792,7 +792,7 @@ async function saveLaporan() {
 
   const gudang = document.getElementById('gudang').value;
   const tanggal = document.getElementById('tanggal').value;
-  if(!gudang || !tanggal) { showToast('✗ Isi Nama Gudang dan Tanggal', 'err'); return; }
+  if(!gudang || !tanggal) { showToast('✗ Isi Nama Keterangan dan Tanggal', 'err'); return; }
 
   const rows = collectRows();
   const jmlAman = rows.filter(r=>r.status==='aman').length;
